@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101114">
+<title>ツ অপূর্ণ ইচ্ছে ツ | Post Maker</title>
+<style>
+@font-face{font-family:OpSerifRegular;src:url('assets/fonts/serif_regular.ttf') format('truetype');font-weight:400}
+@font-face{font-family:OpSerifMedium;src:url('assets/fonts/serif_medium.ttf') format('truetype');font-weight:500}
+@font-face{font-family:OpSerifSemi;src:url('assets/fonts/serif_semibold.ttf') format('truetype');font-weight:600}
+@font-face{font-family:OpSerifBold;src:url('assets/fonts/serif_bold.ttf') format('truetype');font-weight:700}
+@font-face{font-family:OpSerifBlack;src:url('assets/fonts/serif_black.ttf') format('truetype');font-weight:900}
+@font-face{font-family:OpSerifCond;src:url('assets/fonts/serif_condensed.ttf') format('truetype');font-weight:600}
+@font-face{font-family:OpSerifExtraCond;src:url('assets/fonts/serif_extra_condensed.ttf') format('truetype');font-weight:700}
+@font-face{font-family:OpSans;src:url('assets/fonts/sans.ttf') format('truetype');font-weight:400}
+@font-face{font-family:OpSansBold;src:url('assets/fonts/sans_bold.ttf') format('truetype');font-weight:700}
+@font-face{font-family:OpLohit;src:url('assets/fonts/lohit.ttf') format('truetype');font-weight:400}
+*{box-sizing:border-box}
+body{margin:0;background:#101114;color:#f5f5f5;font-family:system-ui,sans-serif}
+.app{max-width:900px;margin:auto;padding:18px}
+h1{font-size:20px;margin:0 0 4px}.sub{color:#a9abb2;font-size:13px;margin-bottom:16px}
+.panel{background:#191a1e;border:1px solid #2b2d33;border-radius:18px;padding:14px}
+textarea{width:100%;min-height:145px;resize:vertical;background:#101114;color:#fff;border:1px solid #34363d;border-radius:13px;padding:14px;font:400 18px/1.65 OpSerifRegular,serif;outline:none}
+textarea:focus{border-color:#777}
+.font-row{margin-top:12px}.font-row label{display:block;font-size:13px;color:#bbb;margin-bottom:7px}
+select{width:100%;background:#101114;color:#fff;border:1px solid #34363d;border-radius:12px;padding:12px;font-size:14px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+button{border:0;border-radius:12px;padding:13px 12px;font-weight:700;font-size:14px;cursor:pointer}
+#save{background:#f2f2f2;color:#111}#clear{background:#2b2d33;color:#eee}
+.preview-wrap{margin-top:16px;background:#0b0c0e;border-radius:18px;padding:10px}
+canvas{display:block;width:100%;height:auto;border-radius:12px;background:#15161a}
+.tip{font-size:12px;color:#9ea1aa;line-height:1.55;margin:10px 2px 0}
+.file{margin-top:10px;font-size:13px}.file input{width:100%;margin-top:7px}
+.status{font-size:12px;color:#8f929b;margin-top:8px;min-height:16px}
+</style>
+</head>
+<body>
+<div class="app">
+<h1>ツ অপূর্ণ ইচ্ছে ツ · Post Maker</h1>
+<div class="sub">লেখা paste করো → Font বেছে নাও → JPG Save করো</div>
+<div class="panel">
+<textarea id="text" placeholder="এখানে তোমার ছোট লেখা paste করো...">বৃষ্টির দিনে কিছু গল্প
+শব্দ ছাড়াই মনে থেকে যায়।</textarea>
+
+<div class="font-row">
+<label for="font">লেখার Font</label>
+<select id="font">
+<option value="F1">1. Romantic Serif</option>
+<option value="F2">2. Soft Classic</option>
+<option value="F3">3. Royal Bold</option>
+<option value="F4">4. Cinematic Black</option>
+<option value="F5">5. Slim Poetry</option>
+<option value="F6">6. Tall Drama</option>
+<option value="F7">7. Clean Modern</option>
+<option value="F8">8. Bengali Classic</option>
+</select>
+</div>
+
+<div class="controls">
+<button id="save">JPG হিসেবে Save</button>
+<button id="clear">Text Clear</button>
+</div>
+<div class="file">
+<label>অন্য Background দিতে চাইলে:</label>
+<input id="bg" type="file" accept="image/*">
+</div>
+<div id="status" class="status"></div>
+</div>
+
+<div class="preview-wrap">
+<canvas id="canvas" width="1080" height="1350"></canvas>
+<div class="tip">Short quote-এর জন্য optimized। Font বদলালে preview-ও বদলাবে।</div>
+</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var canvas=document.getElementById('canvas');
+var ctx=canvas.getContext('2d');
+var textBox=document.getElementById('text');
+var fontBox=document.getElementById('font');
+var bgBox=document.getElementById('bg');
+var saveBtn=document.getElementById('save');
+var clearBtn=document.getElementById('clear');
+var status=document.getElementById('status');
+
+var bgImg=new Image();
+var bgReady=false;
+
+var fonts={
+ F1:{family:'OpSerifRegular',weight:400,shadow:18,stroke:0},
+ F2:{family:'OpSerifMedium',weight:500,shadow:14,stroke:0},
+ F3:{family:'OpSerifSemi',weight:600,shadow:19,stroke:1},
+ F4:{family:'OpSerifBlack',weight:900,shadow:24,stroke:2},
+ F5:{family:'OpSerifCond',weight:600,shadow:16,stroke:1},
+ F6:{family:'OpSerifExtraCond',weight:700,shadow:20,stroke:1},
+ F7:{family:'OpSansBold',weight:700,shadow:12,stroke:0},
+ F8:{family:'OpLohit',weight:400,shadow:15,stroke:1}
+};
+
+function setStatus(s){status.textContent=s||'';}
+
+function fitImage(img,w,h){
+ var scale=Math.max(w/img.width,h/img.height);
+ var iw=img.width*scale, ih=img.height*scale;
+ return {x:(w-iw)/2,y:(h-ih)/2,w:iw,h:ih};
+}
+
+function wrapText(str,maxWidth,fontSpec){
+ ctx.font=fontSpec;
+ var result=[];
+ var paras=str.split(/\n/);
+ for(var p=0;p<paras.length;p++){
+   var line='';
+   var chars=Array.from(paras[p]);
+   if(chars.length===0){result.push('');continue;}
+   for(var i=0;i<chars.length;i++){
+     var test=line+chars[i];
+     if(line && ctx.measureText(test).width>maxWidth){
+       result.push(line); line=chars[i];
+     }else{
+       line=test;
+     }
+   }
+   if(line) result.push(line);
+ }
+ return result;
+}
+
+function draw(){
+ if(!bgReady)return;
+ var W=canvas.width,H=canvas.height;
+ ctx.clearRect(0,0,W,H);
+
+ var pos=fitImage(bgImg,W,H);
+ ctx.drawImage(bgImg,pos.x,pos.y,pos.w,pos.h);
+
+ var grad=ctx.createLinearGradient(0,0,0,H);
+ grad.addColorStop(0,'rgba(0,0,0,.42)');
+ grad.addColorStop(.42,'rgba(0,0,0,.14)');
+ grad.addColorStop(.68,'rgba(0,0,0,.28)');
+ grad.addColorStop(1,'rgba(0,0,0,.68)');
+ ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+
+ var v=ctx.createRadialGradient(W/2,H*.42,H*.12,W/2,H*.42,H*.82);
+ v.addColorStop(0,'rgba(0,0,0,0)');
+ v.addColorStop(1,'rgba(0,0,0,.30)');
+ ctx.fillStyle=v;ctx.fillRect(0,0,W,H);
+
+ var value=fontBox.value;
+ var spec=fonts[value]||fonts.F1;
+ var raw=textBox.value.trim()||'এখানে লেখা দেখা যাবে';
+
+ var size=74;
+ if(raw.length>70)size=62;
+ if(raw.length>120)size=52;
+ if(raw.length>180)size=44;
+
+ var fontSpec=spec.weight+' '+size+'px '+spec.family;
+ var lines=wrapText(raw,W*.78,fontSpec);
+ var lineH=size*1.48;
+ var blockH=lines.length*lineH;
+ var y=H*.40-blockH/2+size;
+
+ ctx.textAlign='center';
+ ctx.textBaseline='alphabetic';
+ ctx.font=fontSpec;
+ ctx.fillStyle='#fff';
+ ctx.shadowColor='rgba(0,0,0,.88)';
+ ctx.shadowBlur=spec.shadow;
+ ctx.shadowOffsetY=5;
+
+ for(var j=0;j<lines.length;j++){
+   if(lines[j]===''){y+=lineH*.45;continue;}
+   if(spec.stroke){
+     ctx.lineWidth=spec.stroke;
+     ctx.strokeStyle='rgba(0,0,0,.45)';
+     ctx.strokeText(lines[j],W/2,y);
+   }
+   ctx.fillText(lines[j],W/2,y);
+   y+=lineH;
+ }
+
+ ctx.shadowColor='transparent';
+ ctx.shadowBlur=0;
+ ctx.shadowOffsetY=0;
+
+ ctx.strokeStyle='rgba(255,255,255,.60)';
+ ctx.lineWidth=2;
+ ctx.beginPath();
+ ctx.moveTo(W/2-52,H-132);ctx.lineTo(W/2+52,H-132);ctx.stroke();
+
+ var brandFamily=spec.family==='OpSansBold'?'OpSansBold':spec.family;
+ ctx.font='700 30px '+brandFamily;
+ ctx.fillStyle='rgba(255,255,255,.94)';
+ ctx.fillText('ツ অপূর্ণ ইচ্ছে ツ',W/2,H-82);
+}
+
+bgImg.onload=function(){
+ bgReady=true;
+ setStatus('');
+ draw();
+};
+bgImg.onerror=function(){
+ setStatus('Background load হয়নি। ZIP extract করে index.html চালাও।');
+};
+bgImg.src='assets/background.png';
+
+textBox.addEventListener('input',draw);
+fontBox.addEventListener('change',draw);
+
+bgBox.addEventListener('change',function(e){
+ var file=e.target.files&&e.target.files[0];
+ if(!file)return;
+ var url=URL.createObjectURL(file);
+ var img=new Image();
+ img.onload=function(){
+   bgImg=img;bgReady=true;draw();URL.revokeObjectURL(url);
+ };
+ img.onerror=function(){setStatus('এই ছবিটা load করা যায়নি।');URL.revokeObjectURL(url);};
+ img.src=url;
+});
+
+clearBtn.addEventListener('click',function(){
+ textBox.value='';
+ draw();
+ textBox.focus();
+});
+
+saveBtn.addEventListener('click',function(){
+ if(!bgReady){setStatus('Background এখনও load হয়নি।');return;}
+ draw();
+ try{
+   var link=document.createElement('a');
+   link.download='opurno-icche-post.jpg';
+   link.href=canvas.toDataURL('image/jpeg',.94);
+   link.click();
+   setStatus('JPG save হচ্ছে...');
+ }catch(e){
+   setStatus('Save করা যায়নি। Browser permission/check করো।');
+ }
+});
+})();
+</script>
+</body>
+</html>
