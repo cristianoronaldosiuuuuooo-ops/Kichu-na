@@ -1,0 +1,9 @@
+{
+  "name": "ツ অপূর্ণ ইচ্ছে ツ Post Maker",
+  "short_name": "অপূর্ণ ইচ্ছে",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#101114",
+  "theme_color": "#101114",
+  "icons": []
+}
